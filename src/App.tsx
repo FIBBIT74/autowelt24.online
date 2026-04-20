@@ -6,6 +6,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import { auth } from './lib/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
@@ -32,9 +33,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans selection:bg-brand selection:text-white">
+      <div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900 font-sans selection:bg-brand selection:text-white">
         <Navbar />
-        <main className="pt-28 pb-12">
+        <main className="flex-1 pt-28 pb-12">
           <Suspense fallback={
             <div className="h-[60vh] flex items-center justify-center">
               <div className="w-10 h-10 border-2 border-brand border-t-transparent rounded-full animate-spin"></div>
@@ -52,6 +53,7 @@ export default function App() {
             </Routes>
           </Suspense>
         </main>
+        <Footer />
       </div>
     </BrowserRouter>
   );

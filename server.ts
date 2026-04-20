@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3001;
 
   // API placeholders (we'll mostly use Firebase directly for this app)
   app.get("/api/health", (req, res) => {
