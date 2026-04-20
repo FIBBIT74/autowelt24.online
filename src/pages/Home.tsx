@@ -7,6 +7,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { mockCars } from '../data/mockCars';
 import CarCard from '../components/CarCard';
+import HeroCarVisual from '../components/HeroCarVisual';
 import { cn } from '../lib/utils';
 
 const BRANDS = ['All', 'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Tesla'];
@@ -89,80 +90,107 @@ export default function Home() {
     <>
       {/* ── DARK HERO ──────────────────────────────────── */}
       <section className="-mt-28 relative overflow-hidden">
-        <div className="hero-dark min-h-[88vh] flex items-center pt-36 pb-24">
-          {/* Glows */}
-          <div className="absolute top-0 right-0 w-[50vw] h-[60vh] bg-brand/6 rounded-full blur-[140px] pointer-events-none" />
-          <div className="absolute bottom-10 left-10 w-72 h-72 bg-brand/4 rounded-full blur-[100px] pointer-events-none" />
-          {/* Grid overlay */}
+        <div className="hero-dark min-h-[88vh] flex items-center pt-36 pb-24 relative">
+
+          {/* ── 3D perspective floor grid ── */}
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage:
-                'linear-gradient(rgba(255,77,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,77,0,0.04) 1px, transparent 1px)',
-              backgroundSize: '64px 64px',
-            }}
-          />
+            className="absolute bottom-0 left-0 right-0 h-2/5 pointer-events-none overflow-hidden"
+            style={{ perspective: '600px' }}
+          >
+            <div
+              className="hero-grid-3d w-full h-full"
+              style={{
+                backgroundImage:
+                  'linear-gradient(rgba(255,77,0,0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(255,77,0,0.08) 1px, transparent 1px)',
+                backgroundSize: '60px 60px',
+                transform: 'rotateX(55deg)',
+                transformOrigin: 'top center',
+              }}
+            />
+            {/* Fade out at top of grid */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-transparent"
+              style={{ background: 'linear-gradient(to bottom, rgba(13,27,46,1) 0%, transparent 40%)' }}
+            />
+          </div>
 
+          {/* ── Ambient glows ── */}
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-brand/8 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-blue-500/8 rounded-full blur-[100px] pointer-events-none" />
+
+          {/* ── Content: 2-column ── */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: 'easeOut' }}
-              className="max-w-3xl"
-            >
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/10 border border-brand/20 text-brand text-sm font-semibold mb-8">
-                <span>🇩🇪</span>
-                <span>Deutschlands Premium Automarkt</span>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-              {/* Headline */}
-              <h1 className="text-6xl sm:text-7xl md:text-[88px] font-display font-bold text-white leading-[0.88] tracking-tighter mb-6">
-                Find Your<br />
-                <span className="text-brand">Perfect Car.</span>
-              </h1>
-
-              <p className="text-lg sm:text-xl text-neutral-400 leading-relaxed mb-12 max-w-xl">
-                Over 50,000 verified listings from premium dealers and private sellers across Germany.
-              </p>
-
-              {/* Hero Search */}
-              <form onSubmit={handleHeroSearch} className="max-w-2xl">
-                <div className="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-2xl shadow-black/40">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                    <input
-                      type="text"
-                      placeholder="Make, model, or keyword…"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 text-neutral-900 bg-transparent outline-none text-base placeholder:text-neutral-400"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="btn-primary py-3.5 px-7 flex items-center justify-center gap-2 whitespace-nowrap rounded-xl"
-                  >
-                    Search Cars
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+              {/* Left: text */}
+              <motion.div
+                initial={{ opacity: 0, y: 32 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65, ease: 'easeOut' }}
+              >
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand/10 border border-brand/20 text-brand text-sm font-semibold mb-8">
+                  <span>🇩🇪</span>
+                  <span>Deutschlands Premium Automarkt</span>
                 </div>
-              </form>
 
-              {/* Trust indicators */}
-              <div className="flex flex-wrap items-center gap-6 mt-8">
-                {[
-                  { Icon: ShieldCheck, text: '50,000+ Verified Listings' },
-                  { Icon: Star, text: '4.9 / 5 Seller Rating' },
-                  { Icon: Trophy, text: '#1 in Germany' },
-                ].map(({ Icon, text }) => (
-                  <div key={text} className="flex items-center gap-2 text-neutral-400 text-sm">
-                    <Icon className="w-4 h-4 text-brand" />
-                    <span>{text}</span>
+                {/* Headline */}
+                <h1 className="text-6xl sm:text-7xl md:text-[82px] font-display font-bold text-white leading-[0.88] tracking-tighter mb-6">
+                  Find Your<br />
+                  <span className="text-brand">Perfect Car.</span>
+                </h1>
+
+                <p className="text-lg text-neutral-400 leading-relaxed mb-10 max-w-lg">
+                  Over 50,000 verified listings from premium dealers and private sellers across Germany.
+                </p>
+
+                {/* Hero Search */}
+                <form onSubmit={handleHeroSearch} className="max-w-xl">
+                  <div className="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-2xl shadow-black/50">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                      <input
+                        type="text"
+                        placeholder="Make, model, or keyword…"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 text-neutral-900 bg-transparent outline-none text-base placeholder:text-neutral-400"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="btn-primary py-3.5 px-7 flex items-center justify-center gap-2 whitespace-nowrap rounded-xl"
+                    >
+                      Search <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
-              </div>
-            </motion.div>
+                </form>
+
+                {/* Trust indicators */}
+                <div className="flex flex-wrap items-center gap-5 mt-8">
+                  {[
+                    { Icon: ShieldCheck, text: '50,000+ Verified' },
+                    { Icon: Star,        text: '4.9 / 5 Rating' },
+                    { Icon: Trophy,      text: '#1 in Germany' },
+                  ].map(({ Icon, text }) => (
+                    <div key={text} className="flex items-center gap-2 text-neutral-400 text-sm">
+                      <Icon className="w-4 h-4 text-brand" />
+                      <span>{text}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Right: 3D car drawing */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="hidden lg:block relative h-72 xl:h-80"
+              >
+                <HeroCarVisual />
+              </motion.div>
+
+            </div>
           </div>
         </div>
       </section>
