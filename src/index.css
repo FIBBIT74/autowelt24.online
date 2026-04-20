@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-brand: #ff4d00;
+  --color-brand-hover: #e64500;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply bg-neutral-50 text-neutral-900 antialiased selection:bg-brand selection:text-white;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .glass-dark {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .interactive-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    @apply transition-all duration-300;
+  }
+  .interactive-glass:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-brand text-white font-semibold rounded-xl transition-all duration-300;
+  }
+  .btn-primary:hover {
+    @apply bg-brand-hover scale-[1.02] shadow-lg shadow-brand/20;
+  }
+  .btn-primary:active {
+    @apply scale-[0.98];
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-black/5 text-neutral-900 font-semibold rounded-xl border border-black/5 transition-all duration-300;
+  }
+  .btn-secondary:hover {
+    @apply bg-black/10 scale-[1.02];
+  }
+  .btn-secondary:active {
+    @apply scale-[0.98];
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 rounded-full hover:bg-neutral-400 transition-colors;
+}
