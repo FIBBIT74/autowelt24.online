@@ -5,50 +5,18 @@ import {
   ShieldCheck, Star, Trophy, MessageSquare
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { mockCars } from '../data/mockCars';
 import CarCard from '../components/CarCard';
 import HeroCarVisual from '../components/HeroCarVisual';
 import { cn } from '../lib/utils';
+import { useCars } from '../hooks/useCars';
 
 const BRANDS = ['All', 'BMW', 'Mercedes-Benz', 'Audi', 'Volkswagen', 'Porsche', 'Tesla'];
 
 const CATEGORIES = [
-  {
-    label: 'Electric',
-    icon: '⚡',
-    desc: `${mockCars.filter(c => c.fuelType === 'Electric').length} listings`,
-    query: 'Electric',
-    gradient: 'from-emerald-50 to-teal-50',
-    border: 'border-emerald-200',
-    accent: 'text-emerald-600',
-  },
-  {
-    label: 'SUV',
-    icon: '🚙',
-    desc: `${mockCars.filter(c => c.bodyType === 'SUV').length} listings`,
-    query: 'SUV',
-    gradient: 'from-blue-50 to-indigo-50',
-    border: 'border-blue-200',
-    accent: 'text-blue-600',
-  },
-  {
-    label: 'Sports',
-    icon: '🏎',
-    desc: `${mockCars.filter(c => c.bodyType === 'Coupe').length} listings`,
-    query: 'Coupe',
-    gradient: 'from-orange-50 to-red-50',
-    border: 'border-orange-200',
-    accent: 'text-brand',
-  },
-  {
-    label: 'Luxury',
-    icon: '👑',
-    desc: `${mockCars.filter(c => c.price >= 100000).length} listings`,
-    query: 'luxury',
-    gradient: 'from-purple-50 to-pink-50',
-    border: 'border-purple-200',
-    accent: 'text-purple-600',
-  },
+  { label: 'Electric', icon: '⚡', fuelType: 'Electric', query: 'Electric', gradient: 'from-emerald-50 to-teal-50', border: 'border-emerald-200', accent: 'text-emerald-600' },
+  { label: 'SUV',      icon: '🚙', fuelType: null,       query: 'SUV',     gradient: 'from-blue-50 to-indigo-50',  border: 'border-blue-200',   accent: 'text-blue-600' },
+  { label: 'Sports',   icon: '🏎', fuelType: null,       query: 'Coupe',   gradient: 'from-orange-50 to-red-50',   border: 'border-orange-200', accent: 'text-brand' },
+  { label: 'Luxury',   icon: '👑', fuelType: null,       query: 'luxury',  gradient: 'from-purple-50 to-pink-50',  border: 'border-purple-200', accent: 'text-purple-600' },
 ];
 
 const HOW_IT_WORKS = [
@@ -74,10 +42,11 @@ const HOW_IT_WORKS = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const { cars, loading } = useCars();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeBrand, setActiveBrand] = useState('All');
 
-  const featured = mockCars
+  const featured = cars
     .filter(car => activeBrand === 'All' || car.make === activeBrand)
     .slice(0, 4);
 
@@ -262,16 +231,21 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {featured.map((car, i) => (
-              <motion.div
-                key={car.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i }}
-              >
-                <CarCard car={car} />
-              </motion.div>
-            ))}
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl bg-neutral-100 animate-pulse aspect-[3/4]" />
+                ))
+              : featured.map((car, i) => (
+                  <motion.div
+                    key={car.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * i }}
+                  >
+                    <CarCard car={car} />
+                  </motion.div>
+                ))
+            }
           </div>
         </section>
 
@@ -283,29 +257,33 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {CATEGORIES.map(cat => (
-              <Link
-                key={cat.label}
-                to={`/search?bodyType=${cat.query}`}
-                className={cn(
-                  'group p-6 rounded-2xl border bg-gradient-to-br transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
-                  cat.gradient,
-                  cat.border
-                )}
-              >
-                <div className="text-4xl mb-4">{cat.icon}</div>
-                <div className="font-display font-bold text-xl text-neutral-900">{cat.label}</div>
-                <div className="text-sm text-neutral-500 mt-1">{cat.desc}</div>
-                <div
+            {CATEGORIES.map(cat => {
+              const count = cat.fuelType
+                ? cars.filter(c => c.fuelType === cat.fuelType).length
+                : cat.label === 'Luxury'
+                  ? cars.filter(c => c.price >= 100000).length
+                  : cars.length;
+              return (
+                <Link
+                  key={cat.label}
+                  to={`/search?bodyType=${cat.query}`}
                   className={cn(
-                    'flex items-center gap-1 text-sm font-semibold mt-4 group-hover:gap-2 transition-all',
-                    cat.accent
+                    'group p-6 rounded-2xl border bg-gradient-to-br transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
+                    cat.gradient,
+                    cat.border
                   )}
                 >
-                  Explore <ChevronRight className="w-3.5 h-3.5" />
-                </div>
-              </Link>
-            ))}
+                  <div className="text-4xl mb-4">{cat.icon}</div>
+                  <div className="font-display font-bold text-xl text-neutral-900">{cat.label}</div>
+                  <div className="text-sm text-neutral-500 mt-1">
+                    {loading ? '…' : `${count} listings`}
+                  </div>
+                  <div className={cn('flex items-center gap-1 text-sm font-semibold mt-4 group-hover:gap-2 transition-all', cat.accent)}>
+                    Explore <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
 

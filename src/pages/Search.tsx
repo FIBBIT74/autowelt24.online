@@ -1,79 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { Search as SearchIcon, SlidersHorizontal, X } from 'lucide-react';
+import { Search as SearchIcon, SlidersHorizontal, X, RefreshCw } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { mockCars } from '../data/mockCars';
 import CarCard from '../components/CarCard';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { useCars } from '../hooks/useCars';
 
-const MAKES = ['All', ...Array.from(new Set(mockCars.map(c => c.make))).sort()];
 const FUEL_TYPES = ['Gasoline', 'Diesel', 'Electric', 'Hybrid', 'Plug-in Hybrid'];
-const BODY_TYPES = ['Sedan', 'Coupe', 'SUV', 'Hatchback', 'Wagon', 'Convertible'];
 const SORT_OPTIONS = [
-  { value: 'relevance',  label: 'Relevance' },
-  { value: 'price-asc',  label: 'Price: Low to High' },
-  { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'year-desc',  label: 'Year: Newest First' },
-  { value: 'mileage-asc',label: 'Mileage: Lowest First' },
+  { value: 'relevance',   label: 'Relevance' },
+  { value: 'price-asc',   label: 'Price: Low → High' },
+  { value: 'price-desc',  label: 'Price: High → Low' },
+  { value: 'year-desc',   label: 'Year: Newest First' },
+  { value: 'mileage-asc', label: 'Mileage: Lowest First' },
 ];
 
 export default function Search() {
   const [searchParams] = useSearchParams();
+  const { cars, loading, error, lastUpdated } = useCars();
 
-  const [query, setQuery]               = useState(searchParams.get('q') || '');
-  const [selectedMake, setSelectedMake] = useState('All');
-  const [maxPrice, setMaxPrice]         = useState(200000);
-  const [yearFrom, setYearFrom]         = useState('');
-  const [yearTo, setYearTo]             = useState('');
-  const [fuels, setFuels]               = useState<string[]>([]);
-  const [bodies, setBodies]             = useState<string[]>(
-    searchParams.get('bodyType') ? [searchParams.get('bodyType')!] : []
-  );
-  const [sortBy, setSortBy]             = useState('relevance');
-  const [showFilters, setShowFilters]   = useState(false);
+  const allMakes = ['All', ...Array.from(
+    new Set(cars.map(c => c.make).filter(m => m && m !== 'Unknown'))
+  ).sort()];
 
-  // Apply URL bodyType param on load
+  const [query,        setQuery]        = useState(searchParams.get('q') || '');
+  const [make,         setMake]         = useState('All');
+  const [maxPrice,     setMaxPrice]     = useState(200000);
+  const [yearFrom,     setYearFrom]     = useState('');
+  const [yearTo,       setYearTo]       = useState('');
+  const [fuels,        setFuels]        = useState<string[]>([]);
+  const [sortBy,       setSortBy]       = useState('relevance');
+  const [showFilters,  setShowFilters]  = useState(false);
+
   useEffect(() => {
-    const bt = searchParams.get('bodyType');
-    if (bt) setBodies([bt]);
     const q = searchParams.get('q');
     if (q) setQuery(q);
   }, []);
 
-  const toggleArr = (arr: string[], setArr: (v: string[]) => void, val: string) => {
-    setArr(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
-  };
-
-  const activeFiltersCount = [
-    selectedMake !== 'All',
-    maxPrice < 200000,
-    yearFrom !== '',
-    yearTo !== '',
-    fuels.length > 0,
-    bodies.length > 0,
-  ].filter(Boolean).length;
+  const toggleFuel = (val: string) =>
+    setFuels(prev => prev.includes(val) ? prev.filter(f => f !== val) : [...prev, val]);
 
   const clearAll = () => {
-    setSelectedMake('All');
+    setMake('All');
     setMaxPrice(200000);
     setYearFrom('');
     setYearTo('');
     setFuels([]);
-    setBodies([]);
     setSortBy('relevance');
   };
 
-  const filtered = mockCars
+  const activeCount = [
+    make !== 'All',
+    maxPrice < 200000,
+    yearFrom !== '',
+    yearTo !== '',
+    fuels.length > 0,
+  ].filter(Boolean).length;
+
+  const filtered = cars
     .filter(car => {
       const q = query.toLowerCase();
-      const matchQuery   = !q || car.make.toLowerCase().includes(q) || car.model.toLowerCase().includes(q);
-      const matchMake    = selectedMake === 'All' || car.make === selectedMake;
-      const matchPrice   = car.price <= maxPrice;
-      const matchYearFrom = !yearFrom || car.year >= parseInt(yearFrom);
-      const matchYearTo  = !yearTo || car.year <= parseInt(yearTo);
-      const matchFuel    = fuels.length === 0 || fuels.includes(car.fuelType);
-      const matchBody    = bodies.length === 0 || bodies.includes(car.bodyType);
-      return matchQuery && matchMake && matchPrice && matchYearFrom && matchYearTo && matchFuel && matchBody;
+      if (q && !car.make.toLowerCase().includes(q) && !car.model.toLowerCase().includes(q)) return false;
+      if (make !== 'All' && car.make !== make) return false;
+      if (car.price > maxPrice) return false;
+      if (yearFrom && (car.year === 0 || car.year < parseInt(yearFrom))) return false;
+      if (yearTo   && (car.year === 0 || car.year > parseInt(yearTo)))   return false;
+      if (fuels.length > 0 && !fuels.includes(car.fuelType) && car.fuelType !== 'Unknown') return false;
+      return true;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -87,9 +80,16 @@ export default function Search() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-display font-bold mb-6">Search Inventory</h1>
+        <div className="flex items-baseline justify-between mb-6">
+          <h1 className="text-4xl font-display font-bold">Search Inventory</h1>
+          {lastUpdated && (
+            <span className="flex items-center gap-1.5 text-xs text-neutral-400">
+              <RefreshCw className="w-3 h-3" />
+              Updated {new Date(lastUpdated).toLocaleDateString('de-DE')}
+            </span>
+          )}
+        </div>
 
         {/* Search + filter toggle */}
         <div className="flex gap-3">
@@ -114,15 +114,15 @@ export default function Search() {
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filters
-            {activeFiltersCount > 0 && (
+            {activeCount > 0 && (
               <span className="bg-brand text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                {activeFiltersCount}
+                {activeCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Expanded filters */}
+        {/* Filter panel */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -131,37 +131,105 @@ export default function Search() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="bg-white border border-neutral-100 rounded-2xl p-6 mt-3 shadow-sm space-y-6">
+              <div className="bg-white border border-neutral-100 rounded-2xl p-6 mt-3 shadow-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Make */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">Brand</label>
+
+                  {/* Brand */}
+                  <div className="lg:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
+                      Brand
+                    </label>
                     <div className="flex flex-wrap gap-2">
-                      {MAKES.map(make => (
+                      {allMakes.map(m => (
                         <button
-                          key={make}
-                          onClick={() => setSelectedMake(make)}
+                          key={m}
+                          onClick={() => setMake(m)}
                           className={cn(
                             'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
-                            selectedMake === make
+                            make === m
                               ? 'bg-neutral-900 border-neutral-900 text-white'
                               : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:border-neutral-300'
                           )}
                         >
-                          {make}
+                          {m}
                         </button>
                       ))}
                     </div>
                   </div>
 
+                  {/* Sort */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
+                      Sort By
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value)}
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand transition-colors cursor-pointer"
+                    >
+                      {SORT_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
+                      Max Price: <span className="text-brand">€{maxPrice.toLocaleString()}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="1000"
+                      max="200000"
+                      step="1000"
+                      value={maxPrice}
+                      onChange={e => setMaxPrice(parseInt(e.target.value))}
+                      className="w-full accent-brand h-2 rounded-lg cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-neutral-400 mt-1">
+                      <span>€1,000</span>
+                      <span>€200,000</span>
+                    </div>
+                  </div>
+
+                  {/* Year */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
+                      Year Range
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="From"
+                        min="1990"
+                        max="2026"
+                        value={yearFrom}
+                        onChange={e => setYearFrom(e.target.value)}
+                        className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand transition-colors"
+                      />
+                      <input
+                        type="number"
+                        placeholder="To"
+                        min="1990"
+                        max="2026"
+                        value={yearTo}
+                        onChange={e => setYearTo(e.target.value)}
+                        className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand transition-colors"
+                      />
+                    </div>
+                  </div>
+
                   {/* Fuel type */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">Fuel Type</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
+                      Fuel Type
+                    </label>
                     <div className="flex flex-wrap gap-2">
                       {FUEL_TYPES.map(ft => (
                         <button
                           key={ft}
-                          onClick={() => toggleArr(fuels, setFuels, ft)}
+                          onClick={() => toggleFuel(ft)}
                           className={cn(
                             'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
                             fuels.includes(ft)
@@ -174,98 +242,23 @@ export default function Search() {
                       ))}
                     </div>
                   </div>
-
-                  {/* Body type */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">Body Type</label>
-                    <div className="flex flex-wrap gap-2">
-                      {BODY_TYPES.map(bt => (
-                        <button
-                          key={bt}
-                          onClick={() => toggleArr(bodies, setBodies, bt)}
-                          className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
-                            bodies.includes(bt)
-                              ? 'bg-brand border-brand text-white'
-                              : 'bg-neutral-50 border-neutral-200 text-neutral-600 hover:border-neutral-300'
-                          )}
-                        >
-                          {bt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Price range */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
-                      Max Price: <span className="text-brand">€{maxPrice.toLocaleString()}</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="10000"
-                      max="200000"
-                      step="5000"
-                      value={maxPrice}
-                      onChange={e => setMaxPrice(parseInt(e.target.value))}
-                      className="w-full accent-brand h-2 rounded-lg cursor-pointer"
-                    />
-                    <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                      <span>€10,000</span>
-                      <span>€200,000</span>
-                    </div>
-                  </div>
-
-                  {/* Year range */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">Year Range</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="From"
-                        min="2000"
-                        max="2025"
-                        value={yearFrom}
-                        onChange={e => setYearFrom(e.target.value)}
-                        className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand transition-colors"
-                      />
-                      <input
-                        type="number"
-                        placeholder="To"
-                        min="2000"
-                        max="2025"
-                        value={yearTo}
-                        onChange={e => setYearTo(e.target.value)}
-                        className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Sort */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">Sort By</label>
-                    <select
-                      value={sortBy}
-                      onChange={e => setSortBy(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-brand transition-colors cursor-pointer"
-                    >
-                      {SORT_OPTIONS.map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
 
-                {activeFiltersCount > 0 && (
-                  <div className="flex justify-end border-t border-neutral-100 pt-4">
-                    <button
-                      onClick={clearAll}
-                      className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear all filters
-                    </button>
-                  </div>
-                )}
+                {/* Footer */}
+                <div className="flex items-center justify-between border-t border-neutral-100 pt-4 mt-6">
+                  <button
+                    onClick={clearAll}
+                    className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-700 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Reset filters
+                  </button>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="px-6 py-2.5 rounded-xl bg-neutral-900 text-white font-semibold text-sm hover:bg-neutral-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -273,43 +266,53 @@ export default function Search() {
       </div>
 
       {/* Active filter chips */}
-      {activeFiltersCount > 0 && (
+      {activeCount > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {selectedMake !== 'All' && (
-            <Chip label={selectedMake} onRemove={() => setSelectedMake('All')} />
+          {make !== 'All' && (
+            <Chip label={make} onRemove={() => setMake('All')} />
           )}
           {maxPrice < 200000 && (
             <Chip label={`Max €${maxPrice.toLocaleString()}`} onRemove={() => setMaxPrice(200000)} />
           )}
           {yearFrom && <Chip label={`From ${yearFrom}`} onRemove={() => setYearFrom('')} />}
-          {yearTo && <Chip label={`To ${yearTo}`} onRemove={() => setYearTo('')} />}
-          {fuels.map(f => <Chip key={f} label={f} onRemove={() => toggleArr(fuels, setFuels, f)} />)}
-          {bodies.map(b => <Chip key={b} label={b} onRemove={() => toggleArr(bodies, setBodies, b)} />)}
+          {yearTo   && <Chip label={`To ${yearTo}`}     onRemove={() => setYearTo('')} />}
+          {fuels.map(f => <Chip key={f} label={f} onRemove={() => toggleFuel(f)} />)}
         </div>
       )}
 
       {/* Results count */}
       <div className="mb-6 flex items-baseline gap-2">
-        <span className="text-2xl font-display font-bold">{filtered.length}</span>
+        <span className="text-2xl font-display font-bold">{loading ? '…' : filtered.length}</span>
         <span className="text-neutral-500 font-medium">
           result{filtered.length !== 1 ? 's' : ''} found
         </span>
         {sortBy !== 'relevance' && (
           <span className="text-xs text-neutral-400 ml-auto">
-            Sorted by {SORT_OPTIONS.find(o => o.value === sortBy)?.label}
+            {SORT_OPTIONS.find(o => o.value === sortBy)?.label}
           </span>
         )}
       </div>
 
       {/* Grid */}
-      {filtered.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="rounded-2xl bg-neutral-100 animate-pulse aspect-[3/4]" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="py-24 text-center bg-red-50 rounded-2xl border border-red-100">
+          <p className="text-lg font-semibold text-red-700 mb-1">Could not load listings</p>
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      ) : filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((car, i) => (
             <motion.div
               key={car.id}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
+              transition={{ delay: Math.min(i * 0.03, 0.3) }}
             >
               <CarCard car={car} />
             </motion.div>
@@ -321,7 +324,7 @@ export default function Search() {
           <p className="text-lg font-semibold text-neutral-700 mb-2">No results found</p>
           <p className="text-neutral-400 text-sm">Try adjusting your filters or search term.</p>
           <button onClick={clearAll} className="btn-primary mt-6 py-2.5 px-6 text-sm">
-            Clear Filters
+            Reset Filters
           </button>
         </div>
       )}

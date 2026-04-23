@@ -34,7 +34,7 @@ export default function CarCard({ car, className }: CarCardProps) {
         <img
           src={car.images[0]}
           alt={`${car.make} ${car.model}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
         />
         {/* Badges top-left */}
