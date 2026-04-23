@@ -1,20 +1,737 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<!-- ============================================================
+     AUTOWELT24 — Car Listing Widget
+     Вставить в Tilda: Блок T123 (Custom HTML) или HEAD
+     Замените API_URL на адрес вашего сервера после деплоя
+     ============================================================ -->
+
+<style>
+  :root {
+    --aw-brand: #ff4d00;
+    --aw-dark:  #0d1b2e;
+    --aw-gray:  #f4f4f5;
+    --aw-border:#e4e4e7;
+    --aw-text:  #18181b;
+    --aw-muted: #71717a;
+    --aw-radius:16px;
+    --aw-font:  'Inter', 'Segoe UI', Arial, sans-serif;
+  }
+
+  #aw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #aw-root {
+    font-family: var(--aw-font);
+    color: var(--aw-text);
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ── HEADER ── */
+  .aw-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .aw-title {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--aw-text);
+  }
+  .aw-updated {
+    font-size: 12px;
+    color: var(--aw-muted);
+  }
+
+  /* ── SEARCH BAR ── */
+  .aw-searchbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .aw-search-wrap {
+    flex: 1;
+    position: relative;
+  }
+  .aw-search-wrap svg {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--aw-muted);
+  }
+  .aw-search-input {
+    width: 100%;
+    padding: 14px 16px 14px 46px;
+    border: 1.5px solid var(--aw-border);
+    border-radius: var(--aw-radius);
+    font-size: 15px;
+    font-family: var(--aw-font);
+    outline: none;
+    background: #fff;
+    transition: border-color .2s;
+  }
+  .aw-search-input:focus { border-color: var(--aw-brand); }
+
+  .aw-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border: 1.5px solid var(--aw-border);
+    border-radius: var(--aw-radius);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--aw-font);
+    background: #fff;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .aw-filter-btn.active {
+    background: var(--aw-dark);
+    color: #fff;
+    border-color: var(--aw-dark);
+  }
+  .aw-filter-badge {
+    background: var(--aw-brand);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── FILTER PANEL ── */
+  .aw-filter-panel {
+    background: #fff;
+    border: 1.5px solid var(--aw-border);
+    border-radius: var(--aw-radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .aw-filter-panel.open { display: block; }
+
+  .aw-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+  }
+  .aw-filter-brand { grid-column: 1 / -1; }
+
+  .aw-filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--aw-muted);
+    margin-bottom: 12px;
+    display: block;
+  }
+  .aw-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .aw-chip {
+    padding: 6px 14px;
+    border: 1.5px solid var(--aw-border);
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--aw-font);
+    background: var(--aw-gray);
+    color: #52525b;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .aw-chip:hover { border-color: #a1a1aa; }
+  .aw-chip.sel-dark  { background: var(--aw-dark);  color: #fff; border-color: var(--aw-dark); }
+  .aw-chip.sel-brand { background: var(--aw-brand); color: #fff; border-color: var(--aw-brand); }
+
+  /* price range */
+  .aw-price-val { color: var(--aw-brand); }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--aw-brand);
+    height: 6px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .aw-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--aw-muted);
+    margin-top: 4px;
+  }
+
+  /* year inputs */
+  .aw-year-row { display: flex; gap: 8px; }
+  .aw-year-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1.5px solid var(--aw-border);
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: var(--aw-font);
+    outline: none;
+    background: var(--aw-gray);
+  }
+  .aw-year-row input:focus { border-color: var(--aw-brand); background: #fff; }
+
+  /* sort */
+  .aw-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--aw-border);
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: var(--aw-font);
+    background: var(--aw-gray);
+    cursor: pointer;
+    outline: none;
+  }
+  .aw-select:focus { border-color: var(--aw-brand); }
+
+  /* panel footer */
+  .aw-panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--aw-border);
+  }
+  .aw-btn-reset {
+    font-size: 13px;
+    color: var(--aw-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--aw-font);
+  }
+  .aw-btn-reset:hover { color: var(--aw-text); }
+  .aw-btn-close {
+    padding: 10px 24px;
+    background: var(--aw-dark);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--aw-font);
+    cursor: pointer;
+  }
+  .aw-btn-close:hover { background: #1e3a5f; }
+
+  /* ── ACTIVE CHIPS ── */
+  .aw-active-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .aw-active-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--aw-dark);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  .aw-active-chip button {
+    background: none;
+    border: none;
+    color: #a1a1aa;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+  .aw-active-chip button:hover { color: #fff; }
+
+  /* ── RESULTS COUNT ── */
+  .aw-results-count {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .aw-count-num {
+    font-size: 26px;
+    font-weight: 800;
+  }
+  .aw-count-label { color: var(--aw-muted); font-size: 15px; }
+  .aw-sort-label { margin-left: auto; font-size: 12px; color: var(--aw-muted); }
+
+  /* ── GRID ── */
+  .aw-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 1100px) { .aw-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 720px)  { .aw-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px)  { .aw-grid { grid-template-columns: 1fr; } }
+
+  /* skeleton */
+  .aw-skeleton {
+    border-radius: var(--aw-radius);
+    background: #e4e4e7;
+    aspect-ratio: 3/4;
+    animation: aw-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes aw-pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: .5; }
+  }
+
+  /* ── CARD ── */
+  .aw-card {
+    border-radius: var(--aw-radius);
+    overflow: hidden;
+    background: #fff;
+    border: 1.5px solid var(--aw-border);
+    transition: box-shadow .25s, border-color .25s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .aw-card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,.10);
+    border-color: #d4d4d8;
+  }
+  .aw-card-img {
+    aspect-ratio: 4/3;
+    position: relative;
+    overflow: hidden;
+    background: var(--aw-gray);
+  }
+  .aw-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .aw-card-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: #d4d4d8;
+  }
+  .aw-card-badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+  }
+  .aw-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .aw-badge-new      { background: var(--aw-brand); color: #fff; }
+  .aw-badge-source   { background: rgba(0,0,0,.55); backdrop-filter: blur(4px); color: #fff; }
+
+  .aw-card-body { padding: 14px; }
+  .aw-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--aw-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .aw-card:hover .aw-card-title { color: var(--aw-brand); }
+  .aw-card-sub {
+    font-size: 12px;
+    color: var(--aw-muted);
+    margin-bottom: 10px;
+  }
+  .aw-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--aw-gray);
+  }
+  .aw-card-price {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--aw-text);
+  }
+  .aw-fuel-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 8px;
+  }
+  .aw-fuel-Gasoline    { background: #fff3e0; color: #e65100; }
+  .aw-fuel-Diesel      { background: #e3f2fd; color: #1565c0; }
+  .aw-fuel-Electric    { background: #e8f5e9; color: #2e7d32; }
+  .aw-fuel-Hybrid      { background: #e0f2f1; color: #00695c; }
+  .aw-fuel-Unknown     { background: var(--aw-gray); color: var(--aw-muted); }
+
+  /* location row */
+  .aw-card-location {
+    font-size: 11px;
+    color: var(--aw-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ── EMPTY / ERROR ── */
+  .aw-empty {
+    text-align: center;
+    padding: 80px 20px;
+    background: var(--aw-gray);
+    border-radius: var(--aw-radius);
+  }
+  .aw-empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .aw-empty h3   { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .aw-empty p    { color: var(--aw-muted); font-size: 14px; margin-bottom: 20px; }
+  .aw-btn-brand  {
+    padding: 10px 24px;
+    background: var(--aw-brand);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--aw-font);
+    cursor: pointer;
+  }
+</style>
+
+<div id="aw-root">
+  <div class="aw-header">
+    <h2 class="aw-title">Fahrzeugsuche</h2>
+    <span class="aw-updated" id="aw-updated"></span>
+  </div>
+
+  <div class="aw-searchbar">
+    <div class="aw-search-wrap">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input id="aw-search" class="aw-search-input" type="text" placeholder="Marke, Modell oder Stichwort…" />
+    </div>
+    <button id="aw-toggle-btn" class="aw-filter-btn" onclick="awTogglePanel()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+      </svg>
+      Filter
+      <span id="aw-filter-badge" class="aw-filter-badge" style="display:none"></span>
+    </button>
+  </div>
+
+  <div id="aw-panel" class="aw-filter-panel">
+    <div class="aw-filter-grid">
+      <div class="aw-filter-brand">
+        <span class="aw-filter-label">Marke</span>
+        <div id="aw-makes" class="aw-chips"></div>
+      </div>
+      <div>
+        <span class="aw-filter-label">Kraftstoff</span>
+        <div id="aw-fuels" class="aw-chips"></div>
+      </div>
+      <div>
+        <span class="aw-filter-label">Max. Preis: <span class="aw-price-val" id="aw-price-val">€200.000</span></span>
+        <input type="range" id="aw-price" min="1000" max="200000" step="1000" value="200000" oninput="awOnPrice(this.value)" />
+        <div class="aw-range-labels"><span>€1.000</span><span>€200.000</span></div>
+      </div>
+      <div>
+        <span class="aw-filter-label">Baujahr</span>
+        <div class="aw-year-row">
+          <input id="aw-year-from" type="number" placeholder="Von" min="1990" max="2026" oninput="awRender()" />
+          <input id="aw-year-to"   type="number" placeholder="Bis" min="1990" max="2026" oninput="awRender()" />
+        </div>
+      </div>
+      <div>
+        <span class="aw-filter-label">Sortierung</span>
+        <select id="aw-sort" class="aw-select" onchange="awRender()">
+          <option value="relevance">Relevanz</option>
+          <option value="price-asc">Preis: aufsteigend</option>
+          <option value="price-desc">Preis: absteigend</option>
+          <option value="year-desc">Baujahr: neueste zuerst</option>
+          <option value="mileage-asc">Kilometerstand: niedrigste</option>
+        </select>
+      </div>
+    </div>
+    <div class="aw-panel-footer">
+      <button class="aw-btn-reset" onclick="awReset()">✕ Zurücksetzen</button>
+      <button class="aw-btn-close" onclick="awTogglePanel()">Schließen</button>
+    </div>
+  </div>
+
+  <div id="aw-chips" class="aw-active-chips"></div>
+
+  <div id="aw-count" class="aw-results-count">
+    <span class="aw-count-num" id="aw-count-num">…</span>
+    <span class="aw-count-label">Ergebnisse gefunden</span>
+    <span class="aw-sort-label" id="aw-sort-label"></span>
+  </div>
+
+  <div id="aw-grid" class="aw-grid"></div>
 </div>
 
-# Run and deploy your AI Studio app
+<script>
+(function () {
+  // ─────────────────────────────────────────
+  // ЗАМЕНИТЕ НА АДРЕС ВАШЕГО СЕРВЕРА
+  var API_URL = 'https://autowelt24.online/api/scraped-cars';
+  // ─────────────────────────────────────────
 
-This contains everything you need to run your app locally.
+  var FUEL_TYPES = ['Gasoline','Diesel','Electric','Hybrid','Plug-in Hybrid'];
+  var FUEL_LABELS = { Gasoline:'⛽ Benzin', Diesel:'🔵 Diesel', Electric:'⚡ Elektro', Hybrid:'🌿 Hybrid', 'Plug-in Hybrid':'🔋 Plug-in' };
+  var SORT_LABELS = { 'price-asc':'Preis ↑','price-desc':'Preis ↓','year-desc':'Baujahr ↓','mileage-asc':'km ↑' };
 
-View your app in AI Studio: https://ai.studio/apps/067750c1-af1a-47ce-a7aa-12b257ae1ce2
+  var state = {
+    cars: [],
+    make: 'All',
+    maxPrice: 200000,
+    yearFrom: '',
+    yearTo: '',
+    fuels: [],
+    sort: 'relevance',
+    query: '',
+  };
 
-## Run Locally
+  // ── LOAD ──
+  function awLoad() {
+    var grid = document.getElementById('aw-grid');
+    grid.innerHTML = [0,0,0,0,0,0,0,0].map(function(){
+      return '<div class="aw-skeleton"></div>';
+    }).join('');
 
-**Prerequisites:**  Node.js
+    fetch(API_URL)
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        state.cars = (data.cars || []).map(function(c){
+          c.make = awNormMake(c.make);
+          c.images = c.images.map(function(img){
+            if (c.source === 'autoscout24') return img.replace(/\/\d+x\d+\.webp$/, '/800x600.webp');
+            if (c.source === 'kleinanzeigen') return img.replace('$_2.AUTO','$_57.AUTO');
+            return img;
+          });
+          return c;
+        });
+        if (data.lastUpdated) {
+          document.getElementById('aw-updated').textContent =
+            'Aktualisiert: ' + new Date(data.lastUpdated).toLocaleDateString('de-DE');
+        }
+        awBuildMakes();
+        awBuildFuels();
+        awRender();
+      })
+      .catch(function(){
+        grid.innerHTML = '<div class="aw-empty" style="grid-column:1/-1"><div class="aw-empty-icon">⚠️</div><h3>Fehler beim Laden</h3><p>Bitte Seite neu laden.</p></div>';
+      });
+  }
 
+  function awNormMake(make) {
+    var aliases = { Mercedes:'Mercedes-Benz', VW:'Volkswagen', Škoda:'Skoda' };
+    var bad = ['Notverkauf','Golf','Passat','Polo','Tiguan','Verkaufe','Biete','TOP'];
+    if (!make || bad.indexOf(make) >= 0) return 'Unknown';
+    return aliases[make] || make;
+  }
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+  // ── BUILD FILTER CHIPS ──
+  function awBuildMakes() {
+    var makes = ['All'].concat(
+      Object.keys(state.cars.reduce(function(acc, c){
+        if (c.make && c.make !== 'Unknown') acc[c.make] = 1;
+        return acc;
+      }, {})).sort()
+    );
+    var el = document.getElementById('aw-makes');
+    el.innerHTML = makes.map(function(m){
+      return '<button class="aw-chip ' + (state.make === m ? 'sel-dark' : '') + '" onclick="awSetMake(\'' + m.replace(/'/g,"\\'") + '\')">' + m + '</button>';
+    }).join('');
+  }
+
+  function awBuildFuels() {
+    var el = document.getElementById('aw-fuels');
+    el.innerHTML = FUEL_TYPES.map(function(f){
+      return '<button class="aw-chip ' + (state.fuels.indexOf(f) >= 0 ? 'sel-brand' : '') + '" onclick="awToggleFuel(\'' + f + '\')">' + (FUEL_LABELS[f] || f) + '</button>';
+    }).join('');
+  }
+
+  // ── FILTER / SORT ──
+  function awFiltered() {
+    var q = state.query.toLowerCase();
+    return state.cars
+      .filter(function(c){
+        if (q && !c.make.toLowerCase().includes(q) && !(c.model||'').toLowerCase().includes(q)) return false;
+        if (state.make !== 'All' && c.make !== state.make) return false;
+        if (c.price > state.maxPrice) return false;
+        if (state.yearFrom && (c.year === 0 || c.year < parseInt(state.yearFrom))) return false;
+        if (state.yearTo   && (c.year === 0 || c.year > parseInt(state.yearTo)))   return false;
+        if (state.fuels.length > 0 && state.fuels.indexOf(c.fuelType) < 0 && c.fuelType !== 'Unknown') return false;
+        return true;
+      })
+      .sort(function(a, b){
+        switch(state.sort){
+          case 'price-asc':   return a.price - b.price;
+          case 'price-desc':  return b.price - a.price;
+          case 'year-desc':   return b.year - a.year;
+          case 'mileage-asc': return a.mileage - b.mileage;
+          default: return 0;
+        }
+      });
+  }
+
+  // ── RENDER ──
+  function awRender() {
+    state.query    = document.getElementById('aw-search').value;
+    state.maxPrice = parseInt(document.getElementById('aw-price').value);
+    state.yearFrom = document.getElementById('aw-year-from').value;
+    state.yearTo   = document.getElementById('aw-year-to').value;
+    state.sort     = document.getElementById('aw-sort').value;
+
+    var list = awFiltered();
+
+    // count
+    document.getElementById('aw-count-num').textContent = list.length;
+    var sl = document.getElementById('aw-sort-label');
+    sl.textContent = (state.sort !== 'relevance') ? (SORT_LABELS[state.sort] || '') : '';
+
+    // active chips
+    var chips = [];
+    if (state.make !== 'All')       chips.push({ label: state.make,               remove: function(){ awSetMake('All'); } });
+    if (state.maxPrice < 200000)    chips.push({ label: 'Max €' + state.maxPrice.toLocaleString('de-DE'), remove: function(){ document.getElementById('aw-price').value=200000; awOnPrice(200000); } });
+    if (state.yearFrom)             chips.push({ label: 'Ab ' + state.yearFrom,   remove: function(){ document.getElementById('aw-year-from').value=''; awRender(); } });
+    if (state.yearTo)               chips.push({ label: 'Bis ' + state.yearTo,    remove: function(){ document.getElementById('aw-year-to').value=''; awRender(); } });
+    state.fuels.forEach(function(f){ chips.push({ label: FUEL_LABELS[f]||f, remove: function(){ awToggleFuel(f); } }); });
+
+    var chipsEl = document.getElementById('aw-chips');
+    chipsEl.innerHTML = '';
+    chips.forEach(function(ch, i){
+      var span = document.createElement('span');
+      span.className = 'aw-active-chip';
+      span.innerHTML = ch.label + ' <button onclick="awChipRemove(' + i + ')">×</button>';
+      chipsEl.appendChild(span);
+    });
+    window._awChipRemovers = chips.map(function(c){ return c.remove; });
+
+    // filter badge
+    var cnt = (state.make !== 'All' ? 1 : 0) + (state.maxPrice < 200000 ? 1 : 0) +
+              (state.yearFrom ? 1 : 0) + (state.yearTo ? 1 : 0) + state.fuels.length;
+    var badge = document.getElementById('aw-filter-badge');
+    if (cnt > 0) { badge.style.display = 'flex'; badge.textContent = cnt; }
+    else { badge.style.display = 'none'; }
+
+    // grid
+    var grid = document.getElementById('aw-grid');
+    if (list.length === 0) {
+      grid.innerHTML = '<div class="aw-empty" style="grid-column:1/-1"><div class="aw-empty-icon">🔍</div><h3>Keine Ergebnisse</h3><p>Filter anpassen oder zurücksetzen.</p><button class="aw-btn-brand" onclick="awReset()">Filter zurücksetzen</button></div>';
+      return;
+    }
+
+    grid.innerHTML = list.map(function(car){
+      var img = car.images && car.images[0]
+        ? '<img src="' + car.images[0] + '" alt="' + car.make + ' ' + car.model + '" loading="lazy" onerror="this.parentNode.innerHTML=\'<div class=\\"aw-card-img-placeholder\\">🚗</div>\'">'
+        : '<div class="aw-card-img-placeholder">🚗</div>';
+
+      var fuelClass = 'aw-fuel-' + (car.fuelType||'Unknown').replace(/[^a-zA-Z]/g,'');
+      var fuelLabel = FUEL_LABELS[car.fuelType] || car.fuelType || '';
+      var srcLabel  = car.source === 'autoscout24' ? 'AS24' : car.source === 'kleinanzeigen' ? 'KAZ' : car.source;
+      var isNew     = car.daysListed !== undefined && car.daysListed <= 3;
+      var price     = car.price ? '€' + car.price.toLocaleString('de-DE') : '–';
+      var sub       = [car.year || '', car.mileage ? car.mileage.toLocaleString('de-DE') + ' km' : '', car.transmission !== 'Unknown' ? car.transmission : ''].filter(Boolean).join(' · ');
+      var location  = car.location ? '<div class="aw-card-location"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>' + car.location + '</div>' : '';
+
+      return '<a class="aw-card" href="' + (car.sourceUrl||'#') + '" target="_blank" rel="noopener">' +
+        '<div class="aw-card-img">' + img +
+          '<div class="aw-card-badges">' +
+            (isNew ? '<span class="aw-badge aw-badge-new">Neu</span>' : '') +
+            '<span class="aw-badge aw-badge-source">' + srcLabel + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="aw-card-body">' +
+          '<div class="aw-card-title">' + car.make + ' ' + (car.model||'') + '</div>' +
+          '<div class="aw-card-sub">' + sub + '</div>' +
+          '<div class="aw-card-bottom">' +
+            '<span class="aw-card-price">' + price + '</span>' +
+            (fuelLabel ? '<span class="aw-fuel-tag ' + fuelClass + '">' + fuelLabel + '</span>' : '') +
+          '</div>' +
+          location +
+        '</div>' +
+      '</a>';
+    }).join('');
+  }
+
+  // ── ACTIONS ──
+  window.awSetMake = function(m) {
+    state.make = m;
+    awBuildMakes();
+    awRender();
+  };
+
+  window.awToggleFuel = function(f) {
+    var i = state.fuels.indexOf(f);
+    if (i >= 0) state.fuels.splice(i, 1);
+    else state.fuels.push(f);
+    awBuildFuels();
+    awRender();
+  };
+
+  window.awOnPrice = function(v) {
+    state.maxPrice = parseInt(v);
+    document.getElementById('aw-price-val').textContent = '€' + parseInt(v).toLocaleString('de-DE');
+    awRender();
+  };
+
+  window.awTogglePanel = function() {
+    var panel = document.getElementById('aw-panel');
+    var btn   = document.getElementById('aw-toggle-btn');
+    var open  = panel.classList.toggle('open');
+    btn.classList.toggle('active', open);
+  };
+
+  window.awReset = function() {
+    state.make = 'All'; state.maxPrice = 200000; state.yearFrom = ''; state.yearTo = ''; state.fuels = [];
+    document.getElementById('aw-price').value    = 200000;
+    document.getElementById('aw-price-val').textContent = '€200.000';
+    document.getElementById('aw-year-from').value = '';
+    document.getElementById('aw-year-to').value   = '';
+    document.getElementById('aw-sort').value       = 'relevance';
+    state.sort = 'relevance';
+    awBuildMakes();
+    awBuildFuels();
+    awRender();
+  };
+
+  window.awChipRemove = function(i) {
+    if (window._awChipRemovers && window._awChipRemovers[i]) window._awChipRemovers[i]();
+  };
+
+  // search input live
+  document.getElementById('aw-search').addEventListener('input', function(){ awRender(); });
+
+  awLoad();
+})();
+</script>
+
