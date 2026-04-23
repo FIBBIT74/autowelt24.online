@@ -501,7 +501,7 @@
 (function () {
   // ─────────────────────────────────────────
   // ЗАМЕНИТЕ НА АДРЕС ВАШЕГО СЕРВЕРА
-  var API_URL = 'https://autowelt24.online/api/scraped-cars';
+  var API_URL = 'https://autowelt24online-production.up.railway.app/';
   // ─────────────────────────────────────────
 
   var FUEL_TYPES = ['Gasoline','Diesel','Electric','Hybrid','Plug-in Hybrid'];
